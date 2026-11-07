@@ -4,17 +4,41 @@
 #   docker compose exec -T throne sh -c 'eval "$(/opt/Throne/Throne --print-connection)" && thronectl import -' < links.txt
 services:
   throne:
-    # image: ghcr.io/throneproj/throne:latest   # or a release tag
-    image: mirror-ghcr.pkg.shecan.ir/throneproj/throne:1.4.1   # or a release tag
+    # Registry and tag come from .env (see .env.example); ghcr.io is upstream.
+    image: ${THRONE_REGISTRY:-mirror-ghcr.pkg.shecan.ir}/throneproj/throne:${THRONE_VERSION:-1.4.1}
     restart: unless-stopped
+    # Wraps the image's entrypoint to apply two .env settings that Throne has no variable for:
+    # - THRONE_WEB_PASSWORD, passed as the web_password secret so it stays out of `docker inspect`. When it is
+    #   non-empty, thronectl web takes it through THRONE_WEB_PASSWORD_FILE instead of the stored password.
+    # - THRONE_INBOUND_ADDRESS, set with thronectl once the API is up, on every start. Empty leaves it alone.
+    entrypoint:
+      - /usr/bin/tini
+      - --
+      - sh
+      - -c
+      - |
+        if [ -s /run/secrets/web_password ]; then
+          export THRONE_WEB_PASSWORD_FILE=/run/secrets/web_password
+        fi
+        if [ -n "$${THRONE_INBOUND_ADDRESS:-}" ]; then
+          (
+            until conn=$$(/opt/Throne/Throne --print-connection 2>/dev/null) &&
+              (eval "$$conn" && thronectl settings set inbound_address="$$THRONE_INBOUND_ADDRESS" >/dev/null 2>&1); do
+              sleep 3
+            done
+            echo "inbound_address set to $$THRONE_INBOUND_ADDRESS"
+          ) &
+        fi
+        exec /usr/local/bin/throne-entrypoint
+    secrets: [web_password]
     # Throne stops the core and then the kill switch; Docker's default 10 s would cut that short.
     stop_grace_period: 45s
     # Tun mode and the kill switch; a proxy-only setup needs neither.
     cap_add: [NET_ADMIN]
     devices: ["/dev/net/tun:/dev/net/tun"]
     volumes: ["throne-data:/var/lib/throne"]
-    # Mixed (HTTP + SOCKS) inbound. It listens on 127.0.0.1 by default, which a port mapping cannot reach:
-    #   thronectl settings set inbound_address=0.0.0.0
+    # Mixed (HTTP + SOCKS) inbound. It listens on 127.0.0.1 by default, which a port mapping cannot reach;
+    # THRONE_INBOUND_ADDRESS=0.0.0.0 in .env opens it (the entrypoint above runs thronectl settings set inbound_address).
     # This mapping opens it on every host interface; on a host the internet reaches, map only the LAN address
     # ("192.168.1.2:2080:2080"): Docker's published ports bypass host firewalls such as ufw.
     # ports: ["2080:2080"]
@@ -25,6 +49,7 @@ services:
     # Over a port mapping every request comes from outside the container, so management (import, settings, backup)
     # also needs THRONE_API_ADMIN_LAN; leave it off to only monitor and switch profiles from the LAN.
     environment:
+      THRONE_INBOUND_ADDRESS: ${THRONE_INBOUND_ADDRESS:-}
       THRONE_API_LISTEN: "*:9095"
       THRONE_WEB_LISTEN: "*:9096"
       THRONE_API_ADMIN_LAN: "1"
@@ -34,6 +59,11 @@ services:
     # Web UI (thronectl web, https://throneproj.github.io/headless/web/), run in this container beside Throne with full
     # management rights. As above, map only the LAN address ("192.168.1.2:9096:9096") on a host the internet reaches.
     # It serves HTTPS with a self-signed certificate: docker compose logs throne shows its fingerprint and the password
-    # created on the first start, and docker compose exec throne thronectl web passwd changes the password.
+    # created on the first start, and docker compose exec throne thronectl web passwd changes the password, unless
+    # THRONE_WEB_PASSWORD is set in .env. After changing that, run docker compose up -d --force-recreate: Compose does
+    # not notice a changed secret value.
 volumes:
   throne-data:
+secrets:
+  web_password:
+    environment: THRONE_WEB_PASSWORD
