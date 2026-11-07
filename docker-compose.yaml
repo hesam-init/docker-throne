@@ -27,9 +27,9 @@ services:
     environment:
       THRONE_API_LISTEN: "*:9095"
       THRONE_WEB_LISTEN: "*:9096"
-      THRONE_API_ALLOW: "192.168.1.0/24"
       THRONE_API_ADMIN_LAN: "1"
-    ports: ["2080:2080", "9096:9096"]
+      # THRONE_API_ALLOW: "192.168.1.0/24"
+    ports: ["2080:2080", "9096:9096", "9095:9095"]
     # ports: ["2080:2080", "9095:9095"]
     # Web UI (thronectl web, https://throneproj.github.io/headless/web/), run in this container beside Throne with full
     # management rights. As above, map only the LAN address ("192.168.1.2:9096:9096") on a host the internet reaches.
