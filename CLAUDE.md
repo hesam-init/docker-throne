@@ -8,6 +8,10 @@ A single `docker-compose.yaml` that runs headless [Throne](https://throneproj.gi
 
 ## Commands
 
+The `Makefile` wraps everything below. Run `make` to list the targets, for example `make up`, `make status`, `make import FILE=links.txt` and `make ctl CMD="..."`. It uses `docker compose` (v2), or falls back to legacy `docker-compose`, with the project pinned to `docker-throne`. Its header comment doubles as `make help` output, so keep it in sync when adding targets.
+
+Raw equivalents:
+
 ```sh
 docker compose up -d                 # start
 docker compose logs throne           # web UI cert fingerprint + first-start password
