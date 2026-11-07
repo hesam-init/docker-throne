@@ -24,7 +24,7 @@ cp .env.example .env
 
 | Variable                 | Default                     | Purpose                                                                                     |
 | ------------------------ | --------------------------- | ------------------------------------------------------------------------------------------- |
-| `THRONE_REGISTRY`        | `mirror-ghcr.pkg.shecan.ir` | Registry the image is pulled from. Use `ghcr.io` to pull straight from GitHub.              |
+| `THRONE_REGISTRY`        | `ghcr.io`                   | Registry the image is pulled from. Use `mirror-ghcr.pkg.shecan.ir` to pull through the mirror. |
 | `THRONE_VERSION`         | `1.4.1`                     | Image tag: a release, or `latest`.                                                          |
 | `THRONE_INBOUND_ADDRESS` | `0.0.0.0`                   | Listen address of the proxy inbound, applied on every start. Empty keeps Throne's setting. |
 | `THRONE_WEB_PASSWORD`    | empty                       | Web UI password. Empty uses the one printed on first start or set with `thronectl web passwd`. |

@@ -25,7 +25,7 @@ docker compose exec throne thronectl web passwd    # change the web UI password
 
 ## Configuration model
 
-- **`.env`** (gitignored; `.env.example` is the template, keep both in sync) sets `THRONE_REGISTRY`, `THRONE_VERSION`, `THRONE_INBOUND_ADDRESS` and `THRONE_WEB_PASSWORD`. The compose file defaults the image to the `mirror-ghcr.pkg.shecan.ir` GHCR mirror at `1.4.1` when `.env` is missing.
+- **`.env`** (gitignored; `.env.example` is the template, keep both in sync) sets `THRONE_REGISTRY`, `THRONE_VERSION`, `THRONE_INBOUND_ADDRESS` and `THRONE_WEB_PASSWORD`. The compose file defaults the image to upstream `ghcr.io` at `1.4.1` when `.env` is missing; `mirror-ghcr.pkg.shecan.ir` is a GHCR mirror you can use instead.
 - **Entrypoint wrapper**: Throne has no env var for these two, so `entrypoint:` wraps the image's `/usr/local/bin/throne-entrypoint` in a `sh -c` script (escape `$` as `$$` there). It exports `THRONE_WEB_PASSWORD_FILE=/run/secrets/web_password` only when the `web_password` secret (sourced from `THRONE_WEB_PASSWORD`) is non-empty, and runs `thronectl settings set inbound_address=...` in the background once the API answers. Compose doesn't recreate the container when only a secret value changes, so password changes need `--force-recreate` (`make recreate`).
 - **Tun mode / kill switch** need `cap_add: NET_ADMIN` and `/dev/net/tun`. A proxy-only setup needs neither. `stop_grace_period: 45s` gives Throne time to stop the core and then the kill switch. Keep it longer than Docker's 10 s default.
 - **State** lives in the named volume `throne-data` at `/var/lib/throne`. The API key is at `/var/lib/throne/config/api.key`.

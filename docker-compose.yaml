@@ -5,7 +5,7 @@
 services:
   throne:
     # Registry and tag come from .env (see .env.example); ghcr.io is upstream.
-    image: ${THRONE_REGISTRY:-mirror-ghcr.pkg.shecan.ir}/throneproj/throne:${THRONE_VERSION:-1.4.1}
+    image: ${THRONE_REGISTRY:-ghcr.io}/throneproj/throne:${THRONE_VERSION:-1.4.1}
     restart: unless-stopped
     # Wraps the image's entrypoint to apply two .env settings that Throne has no variable for:
     # - THRONE_WEB_PASSWORD, passed as the web_password secret so it stays out of `docker inspect`. When it is
